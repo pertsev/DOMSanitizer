@@ -238,21 +238,6 @@ var tests = [
         'payload': 'GA1.1.11233335445.345236546',
         'expected': 'GA1.1.11233335445.345236546'
     },
-    {
-        'name': 'JS context normal data test #30',
-        'payload': JSON.stringify(['document.createElement(\"script\")']),
-        'expected': '%5B%22document.createElement(%5C%22script%5C%22)%22%5D'
-    },
-    {
-        'name': 'JS context normal data test #31',
-        'payload': JSON.stringify(['window.name = \"foo\"']),
-        'expected': '%5B%22window.name%20=%20%5C%22foo%5C%22%22%5D'
-    },
-    {
-        'name': 'JS context normal data test #32',
-        'payload': JSON.stringify(['var img = new Image()']),
-        'expected': '%5B%22var%20img%20=%20new%20Image()%22%5D'
-    },
     /*
      * Grammar tests
      */
