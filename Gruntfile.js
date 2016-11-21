@@ -11,6 +11,7 @@ module.exports = function(grunt) {
                 src: [
                     'node_modules/dompurify/src/*.js',
                     'node_modules/acorn/dist/acorn.js',
+                    'node_modules/acorn/dist/acorn_loose.js',
                     'src/sanitizer.js'
                 ],
                 dest: 'dist/sanitizer.js'

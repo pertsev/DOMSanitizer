@@ -2,7 +2,6 @@
 var fs = require('fs');
 var url = 'http:/localhost:9000/tmp/samples/page.html';
 
-
 casper.test.begin('DOM XSS in JavaScript context tests', function suite(test) {
     casper.start();
     // eslint-disable-next-line no-unused-vars

@@ -238,6 +238,86 @@
     };
 
     /*
+     *  _isJSInjectionLoose
+     *
+     *  @param {string} s - an input string.
+     *  @return {boolean} Returns true if input can be parsed (even with errors) and its AST contains dangerous ECMAScript code, otherwise returns false.
+     */
+
+    var _isJSInjectionLoose = function(s, options) {
+        if (typeof options !== 'object') {
+            options = {};
+        }
+        var parseOnce = options.parseOnce || false;
+        var forbidden = FORBIDDEN_AST_NODES;
+        var ctx, tokens, curToken;
+        var isInjection = false;
+
+        /* Define extension for Acorn's function. */
+        var checkPolicy = function(node, type) {
+            if(forbidden[type]) {
+                console.log(type);
+                if (type === 'AssignmentExpression') {
+                    if (node.left.type === 'MemberExpression'  ||
+                        node.left.type === 'ArrayPattern'  ||
+                        node.left.type === 'ObjectPattern' ||
+                        node.left.name === 'location') {
+                        isInjection = true;
+                        return;
+                    }
+                    if (node.right.type === 'FunctionExpression' ||
+                        node.right.type === 'CallExpression' ||
+                        node.right.type === 'MemberExpression') {
+                        isInjection = true;
+                        return;
+                    }
+                } else {
+                    isInjection = true;
+                    return;
+                }
+            }
+        };
+
+        /* Extend default Acorn's methods. */
+        acorn.loose.pluginsLoose.wafjs = function(parser) {
+            parser.extend('finishNode', function(nextMethod) {
+                return function(node, type) {
+                    checkPolicy(node, type);
+                    return nextMethod.call(this, node, type);
+                };
+            });
+
+            parser.extend('finishNodeAt', function(nextMethod) {
+                return function(node, type, pos, loc) {
+                    checkPolicy(node, type);
+                    return nextMethod.call(this, node, type, pos, loc);
+                };
+            });
+        };
+
+        ctx = s;
+        // List of tokens.
+        tokens = _getJSTokens(ctx);
+        // Hard tokens, that can be deleted from string without parsing.
+        var hardTokens = ['}', ')', '.', '*', '/'];
+        curToken = 0;
+        do {
+            if (hardTokens.indexOf(ctx[0]) === -1) {
+
+                acorn.loose.parse_dammit(ctx, {ecmaVersion: 6, allowImportExportEverywhere: true, allowReserved: true, pluginsLoose: {wafjs: true}});
+
+                if (isInjection) {
+                    return true;
+                }
+            }
+            // Delete the next token from the context string.
+            ctx = ctx.substring(tokens[curToken].length);
+            curToken += 1;
+        } while(ctx.length > 0 && !parseOnce);
+        return false;
+    };
+
+    /*
      *  _isJSInjectionInAttr
      *
      *  @param {string} s - an input string.
@@ -258,6 +338,10 @@
             name = attributes[l].name.toLowerCase();
             if (/^on[a-z]{3,35}/.test(name)) {
                 value = attributes[l].value;
+                /*
+                 * _isJSInjection func can be changed with _isJSInjectionLoose (tested)
+                 * PS. In _sanitize.attr too.
+                 */
                 if (_isJSInjection(value, {parseOnce: true})) {
                     return true;
                 }
@@ -328,6 +412,54 @@
         }
         // "as-is" context
         if (_isJSInjection(s)) {
+            return CLEAN;
+        }
+        return s;
+    };
+
+    _sanitize.jsloose = function(s) {
+
+        var _checkJSInjection = function(s) {
+            if (!(/['"\=\;\(\)\[\]\{\}\.\`]|(?:export)|(?:import)/.test(s))) {
+                return false;
+            }
+            // Injection index - character after that injected code starts
+            var index;
+            index = s.indexOf('\'');
+            if (index !== -1 && _isJSInjectionLoose(s.slice(index + 1))) {
+                return true;
+            }
+            // "Double quote" context
+            index = s.indexOf('"');
+            if (index !== -1 && _isJSInjectionLoose(s.slice(index + 1))) {
+                return true;
+            }
+            // "as-is" context
+            if (_isJSInjectionLoose(s)) {
+                return true;
+            }
+            return false;
+        };
+
+        if (_isJSON(s)) {
+            var jsonObj = JSON.parse(s);
+            for (var key in jsonObj) {
+                if (jsonObj.hasOwnProperty(key)) {
+                    if (_checkJSInjection(key)) {
+                        return CLEAN;
+                    }
+                    // if json object contains nested object => recursive call for object key and value.
+                    if (typeof jsonObj[key] === 'object') {
+                        var result = _sanitize.jsloose(JSON.stringify(jsonObj[key]));
+                        if (result === CLEAN) {
+                            return CLEAN;
+                        }
+                    }else if (_checkJSInjection(jsonObj[key])) {
+                        return CLEAN;
+                    }
+                }
+            }
+        }else if (_checkJSInjection(s)) {
             return CLEAN;
         }
         return s;
