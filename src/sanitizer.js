@@ -64,11 +64,7 @@
     var _isJSON = function(s) {
         try {
             var json = JSON.parse(s);
-            if (typeof json !== 'object') {
-                return false;
-            } else {
-                return true;
-            }
+            return typeof json === 'object';
         } catch(e) {
             return false;
         }

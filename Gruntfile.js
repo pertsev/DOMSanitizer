@@ -52,10 +52,13 @@ module.exports = function(grunt) {
                 options: {
                     args: ['--web-security=no'],
                     test: true,
-                    concise: true
+                    concise: true,
+                    parallel: true,
+                    concurrency: 2
                 },
                 files: {
-                    'xunit/casper-results.xml': ['test/run.js']
+                    'xunit/casper-results.xml': ['test/run.js'],
+                    'xunit/casper-results-loose.xml': ['test/runLoose.js']
                 }
             }
         },
