@@ -151,7 +151,7 @@
         if (s === '') {
             return [''];
         }
-        var re = /((['"])(?:(?!\2|\\).|\\(?:\r\n|[\s\S]))*(\2)?|`(?:[^`\\$]|\\[\s\S]|\$(?!\{)|\$\{(?:[^{}]|\{[^}]*\}?)*\}?)*(`)?)|(\/\/.*)|(\/\*(?:[^*]|\*(?!\/))*(\*\/)?)|(\/(?!\*)(?:\[(?:(?![\]\\]).|\\.)*\]|(?![\/\]\\]).|\\.)+\/(?:(?!\s*(?:\b|[\u0080-\uFFFF$\\'"~({]|[+\-!](?!=)|\.?\d))|[gmiyu]{1,5}\b(?![\u0080-\uFFFF$\\]|\s*(?:[+\-*%&|^<>!=?({]|\/(?![\/*])))))|((?:0[xX][\da-fA-F]+|0[oO][0-7]+|0[bB][01]+|(?:\d*\.\d+|\d+\.?)(?:[eE][+-]?\d+)?))|((?!\d)(?:(?!\s)[$\w\u0080-\uFFFF]|\\u[\da-fA-F]{4}|\\u\{[\da-fA-F]{1,6}\})+)|(--|\+\+|&&|\|\||=>|\.{3}|(?:[+\-*\/%&|^]|<{1,2}|>{1,3}|!=?|={1,2})=?|[?:~]|[;,.[\](){}])|(\s+)|(^$|[\s\S])/g;
+        var re = /((['"])(?:(?!\2|\\).|\\(?:\r\n|[\s\S]))*(\2)?|`(?:[^`\\$]|\\[\s\S]|\$(?!\{)|\$\{(?:[^{}]|\{[^}]*\}?)*\}?)*(`)?)|(\/\/.*)|(\/\*(?:[^*]|\*(?!\/))*(\*\/)?)|(\/(?!\*)(?:\[(?:(?![\]\\]).|\\.)*\]|(?![\/\]\\]).|\\.)+\/(?:(?!\s*(?:\b|[\u0080-\uFFFF$\\'"~({]|[+\-!](?!=)|\.?\d))|[gmiyu]{1,5}\b(?![\u0080-\uFFFF$\\]|\s*(?:[+\-*%&|^<>!=?({]|\/(?![\/*])))))|((?:0[xX][\da-fA-F]+|0[oO][0-7]+|0[bB][01]+|(?:\d*\.\d+|\d+\.?)(?:[eE][+-]?\d+)?))|((?!\d)(?:(?!\s)[$\w\u0080-\uFFFF]|\\u[\da-fA-F]{4}|\\u\{[\da-fA-F]{1,6}\})+)|(--|\+\+|&&|\|\||=>|\.{3}(?:(?:[a-zA-Z]+[a-zA-Z0-9]*)|(?:'[^']*[^\\]'?)|(?:"[^"]*[^\\]"?)|(?:`[^`]*[^\\]`?))|(?:[+\-*\/%&|^]|<{1,2}|>{1,3}|!=?|={1,2})=?|[?:~]|[;,.[\](){}])|(\s+)|(^$|[\s\S])/g;
         var tokens = [];
         var match;
         while ((match = re.exec(s)) != null) {
@@ -288,6 +288,18 @@
                             return;
                         }
                     }
+                } else if (type === 'SpreadElement') {
+                    var argTypes = ['Identifier', 'ArrayExpression'];
+                    var literalTypes = ['"', '\'', '`'];
+                    if (argTypes.indexOf(node.argument.type) !== -1 && node.argument.name !== '✖') {
+                        isInjection = true;
+                        injection = [type, node.toString()];
+                        return;
+                    } else if (node.argument.type === 'Literal' && literalTypes.indexOf(node.argument.toString()[0]) !== -1) {
+                        isInjection = true;
+                        injection = [type, node.toString()];
+                        return;
+                    }
                 } else {
                     isInjection = true;
                     injection = [type, node.toString()];
@@ -321,13 +333,11 @@
         // List of tokens.
         tokens = _getJSTokens(ctx);
         // Hard tokens, that can be deleted from string without parsing.
-        var hardTokens = ['}', ')', '.', '*', '/'];
+        var hardTokens = ['}', ')', '*', '/'];
         curToken = 0;
         do {
-            if (hardTokens.indexOf(ctx[0]) === -1) {
-
+            if (hardTokens.indexOf(ctx[0]) === -1 || (ctx[0] === '.' && ctx.slice(0, 3) !== '...')) {
                 acorn.loose.parse_dammit(ctx, {ecmaVersion: 6, allowImportExportEverywhere: true, allowReserved: true, pluginsLoose: {wafjs: true}});
-
                 if (isInjection) {
                     return true;
                 }
