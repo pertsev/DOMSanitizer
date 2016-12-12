@@ -93,7 +93,7 @@ module.exports = {
         "no-empty-function": "error",
         "no-eq-null": "off",
         "no-eval": "error",
-        "no-extend-native": "error",
+        "no-extend-native": ["error", { "exceptions": ["String"] }],
         "no-extra-bind": "error",
         "no-extra-label": "error",
         "no-extra-parens": "off",

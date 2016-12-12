@@ -19,6 +19,16 @@
 }(function factory(window) {
     'use strict';
 
+    if (!String.prototype.trim) {
+        (function() {
+            // Make sure we trim BOM and NBSP
+            var rtrim = /^[\s\uFEFF\xA0]+|[\s\uFEFF\xA0]+$/g;
+            String.prototype.trim = function() {
+                return this.replace(rtrim, '');
+            };
+        }());
+    }
+
     var DOMSanitizer = function(window) {
         return factory(window);
     };
@@ -239,6 +249,7 @@
      *  @param {string} s - an input string.
      *  @return {boolean} Returns true if input can be parsed (even with errors) and its AST contains dangerous ECMAScript code, otherwise returns false.
      */
+    var injection = ['type', 'string'];
 
     var _isJSInjectionLoose = function(s, options) {
         if (typeof options !== 'object') {
@@ -252,23 +263,34 @@
         /* Define extension for Acorn's function. */
         var checkPolicy = function(node, type) {
             if(forbidden[type]) {
-                console.log(type);
                 if (type === 'AssignmentExpression') {
                     if (node.left.type === 'MemberExpression'  ||
                         node.left.type === 'ArrayPattern'  ||
                         node.left.type === 'ObjectPattern' ||
                         node.left.name === 'location') {
                         isInjection = true;
+                        injection = [type, node.toString()];
                         return;
                     }
                     if (node.right.type === 'FunctionExpression' ||
                         node.right.type === 'CallExpression' ||
                         node.right.type === 'MemberExpression') {
                         isInjection = true;
+                        injection = [type, node.toString()];
                         return;
+                    }
+                } else if (type === 'WithStatement') {
+                    if (node.object.type === 'Identifier') {
+                        var bracketIndex = node.toString().slice(0, node.object.start - node.start).indexOf('(');
+                        if (bracketIndex !== -1 && node.toString().slice(4, bracketIndex).trim() === '') {
+                            isInjection = true;
+                            injection = [type, node.toString()];
+                            return;
+                        }
                     }
                 } else {
                     isInjection = true;
+                    injection = [type, node.toString()];
                     return;
                 }
             }
@@ -276,19 +298,23 @@
 
         /* Extend default Acorn's methods. */
         acorn.loose.pluginsLoose.wafjs = function(parser) {
+
             parser.extend('finishNode', function(nextMethod) {
                 return function(node, type) {
+                    var completeNode = nextMethod.call(this, node, type);
                     checkPolicy(node, type);
-                    return nextMethod.call(this, node, type);
+                    return completeNode;
                 };
-            });
 
+            });
+            /*
             parser.extend('finishNodeAt', function(nextMethod) {
                 return function(node, type, pos, loc) {
                     checkPolicy(node, type);
                     return nextMethod.call(this, node, type, pos, loc);
                 };
             });
+             */
         };
 
         ctx = s;
@@ -563,6 +589,9 @@
         for (item in contexts) {
             ctx = item.toLowerCase();
             if (ctx in _sanitize && !_sanitize[ctx](s)) {
+                if (ctx === 'jsloose') {
+                    return injection;
+                }
                 return CLEAN;
             }
         }

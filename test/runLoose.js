@@ -8,7 +8,12 @@ casper.test.begin('False Positive tests for JSLoose', function suite(test) {
     var suite = require('specLoose/jsl.spec.js');
     suite.tests.forEach(function(ctest) {
         casper.thenOpen(url + '#' + ctest, function() {
-            test.assertNotEquals(this.evaluate(suite.sanitizer), '', ctest);
+            var res = this.evaluate(suite.sanitizer);
+            if (typeof (res) === 'object') {
+                test.assertNotEquals('', '', ctest + '\nError in: ' + ctest + '\nInjection type is: ' + res[0] + '\nInjection is: ' + res[1]);
+            } else {
+                test.assertNotEquals(res, '', ctest);
+            }
         });
     });
 
