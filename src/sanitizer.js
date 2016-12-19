@@ -322,13 +322,19 @@
                     var afterCallNode = node.parser.input.slice(node.end).trim();
                     var beforeCallTypes = [';', ':', ',', '[', '(', '{', ''];
                     var afterCallTypes = [',', ']', ')', '}', ';', ''];
-
+                    console.log(beforeCallNode, afterCallNode);
+                    console.log(node);
                     if (beforeCallTypes.indexOf(beforeCallNode.slice(-1)) !== -1 && afterCallTypes.indexOf(afterCallNode.slice(0, 1)) !== -1) {
                         var callerTypes = ['Identifier', 'MemberExpression'];
                         if (callerTypes.indexOf(node.callee.type) !== -1 && node.callee.name !== '✖') {
                             var callerBracketIndex = node.toString().indexOf('(') + 1;
                             if ((['', ')'].indexOf(node.toString().slice(callerBracketIndex).trim()) !== -1 && node.arguments.length === 0) ||
                                 (['', ')'].indexOf(node.toString().slice(callerBracketIndex).trim()) === -1 && node.arguments.length !== 0)) {
+                                for(var i = 0; i < node.arguments.length - 1; i++) {
+                                    if (node.toString().slice(node.arguments[i].end, node.arguments[i + 1].start).trim() !== ',') {
+                                        return;
+                                    }
+                                }
                                 isInjection = true;
                                 injection = [type, node.toString()];
                                 return;
