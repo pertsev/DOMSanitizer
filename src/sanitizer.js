@@ -317,6 +317,24 @@
                             return;
                         }
                     }
+                } else if (type === 'CallExpression') {
+                    var beforeCallNode = node.parser.input.slice(0, node.start).trim();
+                    var afterCallNode = node.parser.input.slice(node.end).trim();
+                    var beforeCallTypes = [';', ':', ',', '[', '(', '{', ''];
+                    var afterCallTypes = [',', ']', ')', '}', ';', ''];
+
+                    if (beforeCallTypes.indexOf(beforeCallNode.slice(-1)) !== -1 && afterCallTypes.indexOf(afterCallNode.slice(0, 1)) !== -1) {
+                        var callerTypes = ['Identifier', 'MemberExpression'];
+                        if (callerTypes.indexOf(node.callee.type) !== -1 && node.callee.name !== '✖') {
+                            var callerBracketIndex = node.toString().indexOf('(') + 1;
+                            if ((['', ')'].indexOf(node.toString().slice(callerBracketIndex).trim()) !== -1 && node.arguments.length === 0) ||
+                                (['', ')'].indexOf(node.toString().slice(callerBracketIndex).trim()) === -1 && node.arguments.length !== 0)) {
+                                isInjection = true;
+                                injection = [type, node.toString()];
+                                return;
+                            }
+                        }
+                    }
                 } else {
                     isInjection = true;
                     injection = [type, node.toString()];
