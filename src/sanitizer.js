@@ -335,6 +335,28 @@
                             }
                         }
                     }
+                } else if (type === 'NewExpression') {
+                    if (node.callee.type === 'Identifier' && node.callee.name !== '✖') {
+                        isInjection = true;
+                        injection = [type, node.toString()];
+                        return;
+                    }
+                } else if (type === 'FunctionDeclaration') {
+                    if (node.id.type === 'Identifier' && node.id.name !== '✖' &&
+                        node.toString().slice(8, node.id.start - node.start).trim() === '(') {
+                        isInjection = true;
+                        injection = [type, node.toString()];
+                        return;
+                    }
+                } else if (type == 'ForInStatement') {
+                    var operandTypes = ['Identifier', 'MemberExpression'];
+                    if (operandTypes.indexOf(node.left.type) !== -1 && node.left.name !== '✖' &&
+                        operandTypes.indexOf(node.right.type) !== -1 && node.left.name !== '✖' &&
+                        node.toString().slice(3, node.left.start - node.start).trim() === '(') {
+                        isInjection = true;
+                        injection = [type, node.toString()];
+                        return;
+                    }
                 } else {
                     isInjection = true;
                     injection = [type, node.toString()];
