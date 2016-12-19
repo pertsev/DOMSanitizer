@@ -264,20 +264,31 @@
         var checkPolicy = function(node, type) {
             if(forbidden[type]) {
                 if (type === 'AssignmentExpression') {
-                    if (node.left.type === 'MemberExpression'  ||
-                        node.left.type === 'ArrayPattern'  ||
-                        node.left.type === 'ObjectPattern' ||
-                        node.left.name === 'location') {
-                        isInjection = true;
-                        injection = [type, node.toString()];
-                        return;
-                    }
-                    if (node.right.type === 'FunctionExpression' ||
-                        node.right.type === 'CallExpression' ||
-                        node.right.type === 'MemberExpression') {
-                        isInjection = true;
-                        injection = [type, node.toString()];
-                        return;
+                    var beforeNode = node.parser.input.slice(0, node.start).trim();
+                    var afterNode = node.parser.input.slice(node.end).trim();
+                    var beforeTypes = [',', ';', '{', '(', '[', ':', ''];
+                    var afterTypes = [',', ';', ']', ')', '}', ''];
+                    if (beforeTypes.indexOf(beforeNode.slice(-1)) !== -1 && afterTypes.indexOf(afterNode.slice(0, 1)) !== -1) {
+                        if ((node.left.type === 'MemberExpression' ||
+                            node.left.type === 'ArrayPattern' ||
+                            node.left.type === 'ObjectPattern' ||
+                            node.left.name === 'location') &&
+                            (node.right.name !== '✖' &&
+                            node.right.type !== 'AssignmentExpression' &&
+                            node.right.type !== 'UnaryExpression')) {
+                            console.log('LEFT', node);
+                            isInjection = true;
+                            injection = [type, node.toString()];
+                            return;
+                        }
+                        if (node.right.type === 'FunctionExpression' ||
+                            node.right.type === 'CallExpression' ||
+                            node.right.type === 'MemberExpression') {
+                            console.log('RIGHT', node);
+                            isInjection = true;
+                            injection = [type, node.toString()];
+                            return;
+                        }
                     }
                 } else if (type === 'WithStatement') {
                     if (node.object.type === 'Identifier') {
@@ -289,16 +300,22 @@
                         }
                     }
                 } else if (type === 'SpreadElement') {
-                    var argTypes = ['Identifier', 'ArrayExpression'];
-                    var literalTypes = ['"', '\'', '`'];
-                    if (argTypes.indexOf(node.argument.type) !== -1 && node.argument.name !== '✖') {
-                        isInjection = true;
-                        injection = [type, node.toString()];
-                        return;
-                    } else if (node.argument.type === 'Literal' && literalTypes.indexOf(node.argument.toString()[0]) !== -1) {
-                        isInjection = true;
-                        injection = [type, node.toString()];
-                        return;
+                    var beforeSpreadNode = node.parser.input.slice(0, node.start).trim();
+                    var afterSpreadNode = node.parser.input.slice(node.end).trim();
+                    var beforeSpreadTypes = [',', '[', '(', ''];
+                    var afterSpreadTypes = [',', ']', ')', ''];
+                    if (beforeSpreadTypes.indexOf(beforeSpreadNode.slice(-1)) !== -1 && afterSpreadTypes.indexOf(afterSpreadNode.slice(0, 1)) !== -1) {
+                        var argTypes = ['Identifier', 'ArrayExpression'];
+                        var literalTypes = ['"', '\'', '`'];
+                        if (argTypes.indexOf(node.argument.type) !== -1 && node.argument.name !== '✖') {
+                            isInjection = true;
+                            injection = [type, node.toString()];
+                            return;
+                        } else if (node.argument.type === 'Literal' && literalTypes.indexOf(node.argument.toString()[0]) !== -1) {
+                            isInjection = true;
+                            injection = [type, node.toString()];
+                            return;
+                        }
                     }
                 } else {
                     isInjection = true;
