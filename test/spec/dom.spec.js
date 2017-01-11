@@ -109,8 +109,12 @@ var tests = [
         'name': 'HTML context #22',
         'payload': '<a>123{{<b>456}}</b><style><% alert(1) %></style>456</a>',
         'expected': ''
-    }
-];
+    },
+    {
+        'name': 'FP',
+        'payload': 'DOMSanitizer_v<version_here>',
+        'expected': 'DOMSanitizer_v<version_here>'
+    }];
 
 var sanitizer = function() {
     var dirty = location.hash.substring(1);

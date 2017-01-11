@@ -274,16 +274,16 @@
                             node.left.type === 'ObjectPattern' ||
                             node.left.name === 'location') &&
                             (node.right.name !== '✖' &&
-                            node.right.type !== 'AssignmentExpression' &&
-                            node.right.type !== 'UnaryExpression')) {
-                            console.log('LEFT', node);
+                            node.right.type !== 'AssignmentExpression')) {
                             isInjection = true;
                             injection = [type, node.toString()];
                             return;
                         }
-                        if (node.right.type === 'FunctionExpression' ||
+                        if ((node.right.type === 'FunctionExpression' ||
                             node.right.type === 'CallExpression' ||
-                            node.right.type === 'MemberExpression') {
+                            node.right.type === 'MemberExpression') &&
+                            node.left.name !== '✖' &&
+                            node.left.type !== 'UnaryExpression') {
                             console.log('RIGHT', node);
                             isInjection = true;
                             injection = [type, node.toString()];
@@ -354,11 +354,23 @@
                         injection = [type, node.toString()];
                         return;
                     }
-                } else if (type == 'ForInStatement') {
+                } else if (type === 'ForInStatement') {
                     var operandTypes = ['Identifier', 'MemberExpression'];
                     if (operandTypes.indexOf(node.left.type) !== -1 && node.left.name !== '✖' &&
                         operandTypes.indexOf(node.right.type) !== -1 && node.left.name !== '✖' &&
                         node.toString().slice(3, node.left.start - node.start).trim() === '(') {
+                        isInjection = true;
+                        injection = [type, node.toString()];
+                        return;
+                    }
+                } else if (type === 'ExportNamedDeclaration') {
+                    if (node.specifiers.length !== 0) {
+                        isInjection = true;
+                        injection = [type, node.toString()];
+                        return;
+                    }
+                } else if (type === 'VariableDeclaration') {
+                    if (node.declarations[0].id.name !== '✖' && node.declarations[0].init.name !== '✖') {
                         isInjection = true;
                         injection = [type, node.toString()];
                         return;
