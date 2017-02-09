@@ -13,10 +13,14 @@ If you are web application developer and you control application's data flows, t
 DOMSanitizer is based on the following components:
 * [DOMPurify](https://github.com/cure53/DOMPurify)
 * [Acorn parser](https://github.com/ternjs/acorn)
+* [Acorn looseparser](https://github.com/ternjs/acorn#distacorn_loosejs)
  
 DOMSanitizer uses [DOMPurify](https://github.com/cure53/DOMPurify) sanitizer for detection dangerous HTML, MathML and SVG markup and [Acorn](https://github.com/ternjs/acorn) 
 parser for heuristic finding code in data flows.
 It can be used in all modern browsers where `DOMPurify` and `Acorn` must work: Safari, Opera (15+), Internet Explorer (10+), Edge, Firefox and Chrome.
+
+##### UPDATE
+The new JS parsing mode has been added in this fork. You can use this instead of js-context. See example below.
 
 
 ## API
@@ -37,6 +41,9 @@ DOMSanitizer.sanitize('"};alert(1);//"')
 DOMSanitizer.sanitize('"};alert(1);//"', {contexts: ['js']})
 // Returns ''
 
+// Sanitization is a JavaScript-context. (The attack vector has syntax errors)
+DOMSanitizer.sanitize(')},{0:prompt(1', {contexts: ['jsloose']})
+// Returns ''
 
 // Sanitization is a DOM-context (custom DOMPurify-mode).
 DOMSanitizer.sanitize('<script>alert(1)</script>', {contexts: ['dom']})
@@ -49,11 +56,12 @@ DOMSanitizer.sanitize(' " onmouseover=alert(1) "', {contexts: ['attr']})
 
 ## Contexts
 
-DOMSanitizer supports the following contexts: `DOM`, `ATTR`, `URL`, `CALLBACK`, `JS`.
+DOMSanitizer supports the following contexts: `DOM`, `ATTR`, `URL`, `CALLBACK`, `JS`, `JSLOOSE`.
  
 ## Contributors
 * [Arseny Reutov](https://twitter.com/ru_raz0r)
 * [Denis Kolegov](https://twitter.com/dnkolegov)
+* [Pertsev Alexey](https://github.com/pertsev)
 
 ## References
 1. [Waf.js: How to Protect Web Applications using JavaScript](http://www.slideshare.net/DenisKolegov/wafjs-how-to-protect-web-applications-using-javascript).
